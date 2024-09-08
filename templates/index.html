@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liên Quân</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        .picked-hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body class="w-dvw h-dvh p-0 m-0 bg-gray-800 overflow-hidden">
+
+    <div class="w-full h-full flex p-2.5 gap-5 overflow-hidden">
+        <div class="w-3/5 flex flex-col gap-2 overflow-hidden">
+            <div class="flex justify-around items-center">
+                <button onclick="filterHeroes('0')" class="flex flex-col justify-center items-center text-white hover:opacity-75">
+                    Tất cả             
+                </button>
+    
+                <button onclick="filterHeroes('28')" class="flex flex-col justify-center items-center text-white hover:opacity-75">
+                    <img src="https://lienquan.garena.vn/wp-content/uploads/2024/05/dau-si.png">
+                    Đấu sĩ             
+                </button>
+    
+                <button onclick="filterHeroes('31')" class="flex flex-col justify-center items-center text-white hover:opacity-75">
+                    <img src="https://lienquan.garena.vn/wp-content/uploads/2024/05/do-don.png">
+                    Đỡ đòn              
+                </button>
+    
+                <button onclick="filterHeroes('29')" class="flex flex-col justify-center items-center text-white hover:opacity-75">
+                    <img src="https://lienquan.garena.vn/wp-content/uploads/2024/05/phap-su.png">
+                    Pháp sư              
+                </button>
+    
+                <button onclick="filterHeroes('32')" class="flex flex-col justify-center items-center text-white hover:opacity-75">
+                    <img src="https://lienquan.garena.vn/wp-content/uploads/2024/05/sat-thu.png">
+                    Sát thủ              
+                </button>
+    
+                <button onclick="filterHeroes('30')" class="flex flex-col justify-center items-center text-white hover:opacity-75">
+                    <img src="https://lienquan.garena.vn/wp-content/uploads/2024/05/tro-thu.png">
+                    Trợ thủ              
+                </button>
+    
+                <button onclick="filterHeroes('33')" class="flex flex-col justify-center items-center text-white hover:opacity-75">
+                    <img src="https://lienquan.garena.vn/wp-content/uploads/2024/05/xa-thu.png">
+                    Xạ thủ              
+                </button>
+    
+                <div class="flex justify-center items-center gap-1">
+                    <input type="checkbox" id="myCheckbox"/>
+                    <label for="unpick" class="text-white">Available</label>
+                </div>
+            </div>
+            <div id="heroes-list" class="w-full grow grid grid-cols-8 overflow-y-auto gap-1"></div>
+        </div>
+
+        <div class="grow h-full flex justify-center items-center">
+            <div id="picked-champs" class="w-full h-full flex flex-col justify-around items-center gap-1 p-5"></div>
+            <button class="p-2.5 bg-blue-600 text-white rounded-md cursor-pointer hover:opacity-75" onclick="savePickedChamps()">Save</button>
+        </div>
+    </div>
+    
+
+    <script>
+        function filterHeroes(id) {
+            const heroDivs = document.querySelectorAll(".hero-item");
+            
+            heroDivs.forEach(heroDiv => {
+                heroDiv.classList.remove("hidden");
+
+                if (id != 0 && heroDiv.getAttribute("data-type") != id) {
+                    heroDiv.classList.add("hidden");
+                }
+            });
+        }
+
+        const checkbox = document.getElementById('myCheckbox');
+        checkbox.addEventListener('change', function() {
+            const heroDivs = document.querySelectorAll(".picked");
+            if (checkbox.checked) {
+                heroDivs.forEach(heroDiv => {
+                    heroDiv.classList.add("picked-hidden");
+                });
+            } else {
+                heroDivs.forEach(heroDiv => {
+                    heroDiv.classList.remove("picked-hidden");
+                });
+            }
+        });
+
+        async function loadHeroes() {
+            const response = await fetch("/champs");
+
+            if (!response.ok) {
+                alert("Cannot load heroes!");
+                return;
+            }
+
+            const result = await response.json();
+            const heroes = result.champs;
+
+            const listElement = document.getElementById("heroes-list");
+            heroes.forEach(hero => {
+                listElement.innerHTML += `
+                    <div class="hero-item flex flex-col justify-center items-center cursor-pointer gap-1 p-2.5 rounded-md text-gray-500 hover:border hover:text-white hover:border-white transition-all duration-100 delay-100" champ="${hero.name}" data-type="${hero.type}" onclick="pickChamp('${hero.name}', '${hero.img}')">
+                        <div class="w-full flex justify-center items-center">
+                            <img class="w-full rounded-md" src="${hero.img}"/>
+                        </div>
+                        <h2 class="text-xl">${hero.name}</h2>
+                    </div>
+                `;
+            });
+            setPickedChamps();
+        }
+
+        async function setPickedChamps() {
+            const response = await fetch("/champs/picked");
+
+            if (!response.ok) {
+                alert("Cannot load picked heroes!");
+                return;
+            }
+
+            const result = await response.json();
+            const picked = result.champs;
+
+            const heroDivs = document.querySelectorAll(".hero-item");
+            
+            heroDivs.forEach(heroDiv => {
+                heroDiv.classList.remove("picked");
+
+                for (let i = 0; i < picked.length; i++) {
+                    if (heroDiv.getAttribute("champ") == picked[i]) {
+                        heroDiv.classList.add("picked");
+                    }
+                }
+            });
+        }
+
+        loadHeroes();
+        
+        pickedChamps = []
+
+        function loadpickChamps(heroes) {
+            const currentPick = document.getElementById("picked-champs");
+            currentPick.innerHTML = "";
+
+            for (let i = 0; i < heroes.length; i++) {
+                currentPick.innerHTML += `
+                    <div class="hero-item h-1/5 flex flex-col cursor-pointer justify-center items-center gap-1 p-2.5 rounded-md text-white" onclick="removePickChamp('${i}')">
+                        <div class="w-full h-full flex justify-center items-center">
+                            <img class="w-full h-full rounded-md" src="${heroes[i].img}"/>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function pickChamp(name, image) {
+            if (pickChamp.length >= 5) {
+                return;
+            }
+
+            pickedChamps.push({
+                name: name,
+                img: image
+            });
+
+            loadpickChamps(pickedChamps);
+        }
+
+        function removePickChamp(index) {
+            if (pickChamp.length <= 0) {
+                return;
+            }
+
+            pickedChamps.splice(index, 1);
+
+            loadpickChamps(pickedChamps);
+        }
+
+        async function savePickedChamps() {
+            const response = await fetch("/champs/picked", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    champs: pickedChamps
+                })
+            });
+
+            if (!response.ok) {
+                alert("Cannot load heroes!");
+                return;
+            }
+
+            setPickedChamps();
+        }
+    </script>
+</body>
+</html>
